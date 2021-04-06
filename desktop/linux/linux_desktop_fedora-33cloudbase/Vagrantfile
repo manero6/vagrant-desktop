@@ -36,9 +36,9 @@ Vagrant.configure("2") do |config|
   spins.each do |i|
     config.vm.define "fedora-#{i}" do |vm|
       vm.vm.hostname = "fedora-#{i}"
-      vm.vm.provision i, type: "shell", path: "../../../provision/shell/dnf/#{i}.sh"
-      vm.vm.provision "vdagent", type: "shell", path: "../../../provision/shell/dnf/spice-vdagent.sh"
-      vm.vm.provision "graphical", type: "shell", path: "../../../provision/shell/systemctl/set-graphical-target.sh"
+      vm.vm.provision i, type: "shell", inline: "dnf -y group install #{i}"
+      vm.vm.provision "vdagent", type: "shell", inline: "dnf -y install spice-vdagent"
+      vm.vm.provision "graphical", type: "shell", inline: "systemctl set-default graphical.target"
       vm.vm.provision "reboot", type: "shell", inline: "reboot"
     end
   end

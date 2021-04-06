@@ -6,8 +6,8 @@ VM_RAM = ENV["VM_RAM"] || "1024"
 VM_CPU = ENV["VM_CPU"] || "2"
 
 ### Ubuntu Flavo(u)rs -> https://wiki.ubuntu.com/UbuntuFlavors
-gnome = "ubuntu"
-non_gnome = %w(
+flavors = %w(
+  ubuntu
   kubuntu
   lubuntu
   xubuntu
@@ -33,18 +33,14 @@ Vagrant.configure("2") do |config|
       vb.cpus = VM_CPU
   end
 
-  i = gnome
-  config.vm.define i do |vm|
-    vm.vm.hostname = i
-    vm.vm.provision i, type: "shell", path: "../../../provision/shell/apt/#{i}-desktop.sh"
-    vm.vm.provision "reboot", type: "shell", inline: "reboot"
-  end
-
-  non_gnome.each do |i|
+  flavors.each do |i|
     config.vm.define i do |vm|
       vm.vm.hostname = i
-      vm.vm.provision i, type: "shell", path: "../../../provision/shell/apt/#{i}-desktop.sh"
-      vm.vm.provision "rm-gnome3", type: "shell", path: "../../../provision/shell/apt/rm-gnome3.sh"
+      vm.vm.provision "update", type: "shell", inline: "apt-get update"
+      vm.vm.provision i, type: "shell", inline: "DEBIAN_FRONTEND=noninteractive apt-get install -yq #{i}-desktop"
+      if i != "ubuntu"
+        vm.vm.provision "rm-gnome", type: "shell", inline: "DEBIAN_FRONTEND=noninteractive apt-get purge -yq --auto-remove gnome-shell"
+      end
       vm.vm.provision "reboot", type: "shell", inline: "reboot"
     end
   end
