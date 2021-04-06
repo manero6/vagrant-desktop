@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VM_BOX = ENV["VM_BOX"] || "fedora/33-cloud-base"
+VM_RAM = ENV["VM_RAM"] || "1280"
+VM_CPU = ENV["VM_CPU"] || "2"
+
+### Fedora Spins -> https://spins.fedoraproject.org
+spins = %w(
+  gnome
+  kde
+  xfce
+  lxqt
+  lxde
+  mate
+  cinnamon
+)
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = VM_BOX
+
+  config.vm.provider "libvirt" do |lv|
+      lv.memory = VM_RAM
+      lv.cpus = VM_CPU
+      lv.graphics_type = "spice"
+      lv.video_type = "qxl"
+      lv.channel type: "spicevmc", target_name: "com.redhat.spice.0", target_type: "virtio"
+      lv.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+  end
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = VM_RAM
+      vb.cpus = VM_CPU
+  end
+
+  spins.each do |i|
+    config.vm.define "fedora-#{i}" do |vm|
+      vm.vm.hostname = "fedora-#{i}"
+      vm.vm.provision i, type: "shell", path: "../../../provision/shell/dnf/#{i}.sh"
+      vm.vm.provision "vdagent", type: "shell", path: "../../../provision/shell/dnf/spice-vdagent.sh"
+      vm.vm.provision "graphical", type: "shell", path: "../../../provision/shell/systemctl/set-graphical-target.sh"
+      vm.vm.provision "reboot", type: "shell", inline: "reboot"
+    end
+  end
+
+end

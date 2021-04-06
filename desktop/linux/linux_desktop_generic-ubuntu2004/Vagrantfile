@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VM_BOX = ENV["VM_BOX"] || "generic/ubuntu2004"
+VM_RAM = ENV["VM_RAM"] || "1024"
+VM_CPU = ENV["VM_CPU"] || "2"
+
+### Ubuntu Flavo(u)rs -> https://wiki.ubuntu.com/UbuntuFlavors
+gnome = "ubuntu"
+non_gnome = %w(
+  kubuntu
+  lubuntu
+  xubuntu
+  ubuntu-mate
+  ubuntu-budgie
+  ubuntu-kylin
+)
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = VM_BOX
+
+  config.vm.provider "libvirt" do |lv|
+      lv.memory = VM_RAM
+      lv.cpus = VM_CPU
+      lv.graphics_type = "spice"
+      lv.video_type = "qxl"
+      lv.channel type: "spicevmc", target_name: "com.redhat.spice.0", target_type: "virtio"
+      lv.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+  end
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = VM_RAM
+      vb.cpus = VM_CPU
+  end
+
+  i = gnome
+  config.vm.define i do |vm|
+    vm.vm.hostname = i
+    vm.vm.provision i, type: "shell", path: "../../../provision/shell/apt/#{i}-desktop.sh"
+    vm.vm.provision "reboot", type: "shell", inline: "reboot"
+  end
+
+  non_gnome.each do |i|
+    config.vm.define i do |vm|
+      vm.vm.hostname = i
+      vm.vm.provision i, type: "shell", path: "../../../provision/shell/apt/#{i}-desktop.sh"
+      vm.vm.provision "rm-gnome3", type: "shell", path: "../../../provision/shell/apt/rm-gnome3.sh"
+      vm.vm.provision "reboot", type: "shell", inline: "reboot"
+    end
+  end
+
+end
