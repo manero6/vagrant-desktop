@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-VM_BOX = ENV["VM_BOX"] || "debian/jessie64"
+VM_BOX = ENV["VM_BOX"] || "debian/stretch64"
 VM_RAM = ENV["VM_RAM"] || "1024"
 VM_CPU = ENV["VM_CPU"] || "2"
 
@@ -11,6 +11,7 @@ tasks = %w(
   kde
   cinnamon
   lxde
+  lxqt
   mate
   xfce
 )

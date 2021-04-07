@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-VM_BOX = ENV["VM_BOX"] || "debian/jessie64"
+VM_BOX = ENV["VM_BOX"] || "debian/buster64"
 VM_RAM = ENV["VM_RAM"] || "1024"
 VM_CPU = ENV["VM_CPU"] || "2"
 
@@ -39,7 +39,6 @@ Vagrant.configure("2") do |config|
       vm.vm.provision "passwd", type: "shell", inline: %Q[echo -e "vagrant\nvagrant" | passwd vagrant]
       vm.vm.provision "update", type: "shell", inline: "apt-get update"
       vm.vm.provision i, type: "shell", inline: "DEBIAN_FRONTEND=noninteractive apt-get install -yq task-#{i}-desktop"
-      vm.vm.provision "vdagent", type: "shell", inline: "apt-get install -yq spice-vdagent"
       vm.vm.provision "reboot", type: "shell", inline: "reboot"
     end
   end
