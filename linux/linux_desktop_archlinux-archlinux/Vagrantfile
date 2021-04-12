@@ -1,0 +1,55 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VM_BOX = ENV["VM_BOX"] || "archlinux/archlinux"
+VM_RAM = ENV["VM_RAM"] || "1024"
+VM_CPU = ENV["VM_CPU"] || "2"
+
+### Arch Linux groups -> https://archlinux.org/groups
+groups = %w(
+  gnome
+  plasma
+  xfce4
+  mate
+  pantheon
+  deepin
+  lxde
+  i3
+  ukui
+  lxqt
+)
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = VM_BOX
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.provider "libvirt" do |lv|
+      lv.memory = VM_RAM
+      lv.cpus = VM_CPU
+      lv.graphics_type = "spice"
+      lv.video_type = "qxl"
+      lv.channel type: "spicevmc", target_name: "com.redhat.spice.0", target_type: "virtio"
+      lv.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+  end
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = VM_RAM
+      vb.cpus = VM_CPU
+  end
+
+  groups.each do |i|
+    config.vm.define "archlinux-#{i}" do |vm|
+      vm.vm.hostname = "archlinux-#{i}"
+      vm.vm.provision i, type: "shell", inline: "yes | pacman -Sy --noconfirm xorg #{i}"
+      if i != "gnome" or "plasma"
+        vm.vm.provision "dm", type: "shell", inline: "pacman -Sy --noconfirm lightdm-gtk-greeter"
+        vm.vm.provision "dm_enable", type: "shell", inline: "systemctl enable --now lightdm"
+      else
+        vm.vm.provision "dm_enable", type: "shell", inline: "systemctl enable --now gdm || systemctl enable --now sddm"
+      end
+      vm.vm.provision "vdagent", type: "shell", inline: "pacman -Sy --noconfirm spice-vdagent"
+      vm.vm.provision "reboot", type: "shell", inline: "reboot"
+    end
+  end
+
+end
