@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+VAGRANTFILE_API_VERSION = "2"
+
 VM_BOX = ENV["VM_BOX"] || "archlinux/archlinux"
 VM_RAM = ENV["VM_RAM"] || "1024"
 VM_CPU = ENV["VM_CPU"] || "2"
@@ -14,12 +16,12 @@ groups = %w(
   pantheon
   deepin
   lxde
-  i3
-  ukui
   lxqt
+  ukui
+  i3
 )
 
-Vagrant.configure("2") do |config|
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.box = VM_BOX
   config.vm.synced_folder ".", "/vagrant", disabled: true
@@ -40,6 +42,10 @@ Vagrant.configure("2") do |config|
   groups.each do |i|
     config.vm.define "archlinux-#{i}" do |vm|
       vm.vm.hostname = "archlinux-#{i}"
+      vm.vm.provision "pacman", type: "shell", inline: <<-SHELL
+        grep -q \\#Color /etc/pacman.conf && sed -i 's/\\#Color/Color/' /etc/pacman.conf
+        grep -q ILoveCandy /etc/pacman.conf && echo '---C o  o' || sed -i 's/\\[options\\]/\\[options\\]\\nILoveCandy/' /etc/pacman.conf
+      SHELL
       vm.vm.provision i, type: "shell", inline: "yes | pacman -Sy --noconfirm xorg #{i}"
       if i != "gnome" or "plasma"
         vm.vm.provision "dm", type: "shell", inline: "pacman -Sy --noconfirm lightdm-gtk-greeter"
