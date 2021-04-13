@@ -1,0 +1,54 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+VM_BOX = ENV["VM_BOX"] || "opensuse/Tumbleweed.x86_64"
+VM_RAM = ENV["VM_RAM"] || "1024"
+VM_CPU = ENV["VM_CPU"] || "2"
+
+### openSUSE patterns -> zypper se -t pattern
+patterns = %w(
+  cinnamon
+  enlightenment
+  gnome
+  kde
+  lxde
+  lxqt
+  mate
+  openSUSEway
+  xfce
+)
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.box = VM_BOX
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  config.vm.provider "libvirt" do |lv|
+      lv.memory = VM_RAM
+      lv.cpus = VM_CPU
+      lv.graphics_type = "spice"
+      lv.video_type = "qxl"
+      lv.channel type: "spicevmc", target_name: "com.redhat.spice.0", target_type: "virtio"
+      lv.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+  end
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = VM_RAM
+      vb.cpus = VM_CPU
+  end
+
+  patterns.each do |i|
+    config.vm.define "opensuse-#{i}" do |vm|
+      vm.vm.hostname = "opensuse-#{i}"
+      vm.vm.provision i, type: "shell", inline: "zypper -n in -t pattern #{i} x11"
+      if i != "gnome" or "kde"
+        vm.vm.provision "dm", type: "shell", inline: "zypper -n in lightdm-gtk-greeter-branding-openSUSE"
+      end
+      vm.vm.provision "graphical", type: "shell", inline: "systemctl set-default graphical.target"
+      vm.vm.provision "misc", type: "shell", inline: "zypper -n in xterm lato-fonts"
+      vm.vm.provision "reboot", type: "shell", inline: "reboot"
+    end
+  end
+
+end
